@@ -11,7 +11,6 @@ def preprocess_image(image):
     image = image.astype('float32') / 255.0
     return image
 
-@st.cache
 def main():
     st.title("Brain Tumor MRI Classification")
     st.write("Upload an MRI image to classify the tumor type.")
