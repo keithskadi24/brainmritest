@@ -8,13 +8,17 @@ def load_model():
     model = tf.keras.models.load_model('brainMRI.h5')
     return model
 
-def import_and_predict(image_data, model):
+def preprocess_image(image):
     size = (256, 256)
-    image = ImageOps.fit(image_data, size, Image.LANCZOS)
+    image = ImageOps.fit(image, size, Image.LANCZOS)
     image = np.asarray(image)
-    image = image / 255.0
-    img_reshape = np.reshape(image, (1, 256, 256, 3))
-    prediction = model.predict(img_reshape)
+    image = image.astype('float32') / 255.0
+    return image
+
+def import_and_predict(image, model):
+    image = preprocess_image(image)
+    image = np.expand_dims(image, axis=0)
+    prediction = model.predict(image)
     return prediction
 
 def main():
@@ -32,7 +36,8 @@ def main():
             categories = ['notumor', 'glioma', 'meningioma', 'pituitary']
             class_index = np.argmax(prediction)
             class_name = categories[class_index]
-            st.success("Predicted Class: {}".format(class_name))
+            confidence = prediction[0][class_index]
+            st.success(f"Predicted Class: {class_name} (Confidence: {confidence:.2f})")
 
 if __name__ == '__main__':
     main()
