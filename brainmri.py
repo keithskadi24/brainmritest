@@ -20,6 +20,7 @@ def preprocess_image(image):
     image = np.expand_dims(image, axis=0)
     return image
 
+@tf.function
 def predict(image, model):
     preprocessed_image = preprocess_image(image)
     prediction = model.predict(preprocessed_image)
