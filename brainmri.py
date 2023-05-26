@@ -8,12 +8,10 @@ import io
 
 model = tf.keras.models.load_model('brainMRI.h5')
 
-@tf.function
 def preprocess_image(image_file):
-    print(image_file)
-    img = np.array(Image.open(io.BytesIO(image_file.read())))
-    print(img.shape)
-    img = cv2.resize(img, (128, 128))
+    img = Image.open(image_file)
+    img = img.resize((128, 128))
+    img = np.array(img)
     img = img / 255.0
     img = np.expand_dims(img, axis=0)
     return img
