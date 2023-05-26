@@ -5,26 +5,31 @@ from PIL import Image
 
 model = tf.keras.models.load_model('brainMRI.h5')
 
-categories = ['notumor', 'glioma', 'meningioma', 'pituitary']
+def preprocess_image(image):
+    image = cv2.resize(image, (128, 128))
+    image = image.astype('float32') / 255.0
+    return image
 
-# Set a title for your web app
-st.title('Brain Tumor MRI Classifier')
+def main():
+    st.title("Brain Tumor MRI Classification")
+    st.write("Upload an MRI image to classify the tumor type.")
 
-# Upload and classify the image
-uploaded_file = st.file_uploader('Upload an MRI image', type=['jpg', 'jpeg', 'png'])
-if uploaded_file is not None:
-    image = Image.open(uploaded_file)
-    st.image(image, caption='Uploaded MRI', use_column_width=True)
+    # File upload
+    uploaded_file = st.file_uploader("Choose an MRI image", type=['jpg', 'jpeg', 'png'])
 
-    # Preprocess the image
-    image = np.array(image.resize((128, 128))) / 255.0
-    image = np.expand_dims(image, axis=0)
+    if uploaded_file is not None:
+        image = cv2.imdecode(np.fromstring(uploaded_file.read(), np.uint8), 1)
+        image = preprocess_image(image)
 
-    # Make predictions
-    predictions = model.predict(image)
-    predicted_class = np.argmax(predictions)
-    predicted_label = categories[predicted_class]
+        # Make prediction
+        predictions = model.predict(np.expand_dims(image, axis=0))
+        predicted_class = np.argmax(predictions[0])
+        class_names = ['notumor', 'glioma', 'meningioma', 'pituitary']
+        predicted_label = class_names[predicted_class]
 
-    # Show the prediction
-    st.write('Prediction:', predicted_label)
+        # Display prediction
+        st.image(image, caption='Uploaded MRI Image', use_column_width=True)
+        st.write("Prediction:", predicted_label)
 
+if __name__ == "__main__":
+    main()
