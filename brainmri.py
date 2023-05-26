@@ -1,38 +1,38 @@
 import streamlit as st
 import tensorflow as tf
-import cv2
+from PIL import Image, ImageOps
 import numpy as np
 
-model = tf.keras.models.load_model('brainMRI.h5')
+@st.cache(allow_output_mutation=True)
+def load_model():
+    model = tf.keras.models.load_model('brainMRI.h5')
+    return model
 
-def preprocess_image(image):
-    image = cv2.resize(image, (128, 128))
-    image = image / 255.0  # Normalize pixel values
-    image = np.expand_dims(image, axis=0)  # Add batch dimension
-    return image
+def import_and_predict(image_data, model):
+    size = (256, 256)
+    image = ImageOps.fit(image_data, size, Image.LANCZOS)
+    image = np.asarray(image)
+    image = image / 255.0
+    img_reshape = np.reshape(image, (1, 256, 256, 3))
+    prediction = model.predict(img_reshape)
+    return prediction
 
 def main():
-    st.title('Brain Tumor Classifier')
-    st.text('Upload an MRI image for tumor classification')
+    st.title("Brain Tumor Classification")
+    file = st.file_uploader("Choose a brain MRI image", type=["jpg", "jpeg", "png"])
 
-    # File uploader
-    uploaded_file = st.file_uploader('Choose an MRI image', type=['jpg', 'jpeg', 'png'])
-
-    if uploaded_file is not None:
-        # Read the image
-        image = cv2.imdecode(np.frombuffer(uploaded_file.read(), np.uint8), 1)
-
-        # Preprocess the image
-        preprocessed_image = preprocess_image(image)
-
-        # Perform inference
-        predictions = model.predict(preprocessed_image)
-        class_index = np.argmax(predictions[0])
-        class_label = categories[class_index]
-
-        # Display the result
-        st.image(image, caption=f'Uploaded Image')
-        st.write(f'Prediction: {class_label}')
+    if file is None:
+        st.text("Please upload an image file.")
+    else:
+        image = Image.open(file)
+        st.image(image, caption='Uploaded MRI Image.', use_column_width=True)
+        model = load_model()
+        if st.button("Classify"):
+            prediction = import_and_predict(image, model)
+            categories = ['notumor', 'glioma', 'meningioma', 'pituitary']
+            class_index = np.argmax(prediction)
+            class_name = categories[class_index]
+            st.success("Predicted Class: {}".format(class_name))
 
 if __name__ == '__main__':
     main()
