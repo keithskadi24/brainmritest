@@ -4,12 +4,13 @@ import tensorflow as tf
 from tensorflow.keras.preprocessing import image
 import numpy as np
 from PIL import Image
+import io
 
 model = tf.keras.models.load_model('brainMRI.h5')
 
 @tf.function
 def preprocess_image(image_file):
-    img = np.array(Image.open(image_file))
+    img = np.array(Image.open(io.BytesIO(image_file)))
     img = cv2.resize(img, (128, 128))
     img = img / 255.0
     img = np.expand_dims(img, axis=0)
