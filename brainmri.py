@@ -1,38 +1,46 @@
 import streamlit as st
 import tensorflow as tf
-from PIL import Image, ImageOps
 import numpy as np
+from PIL import Image, ImageOps
 
+# Load the model
 @st.cache(allow_output_mutation=True)
-def load_model():
+def load_model_from_file():
     model = tf.keras.models.load_model('brainMRI.h5')
     return model
 
-def import_and_predict(image_data, model):
-    size = (256, 256)
-    image = ImageOps.fit(image_data, size, Image.LANCZOS)
+model = load_model_from_file()
+
+categories = ['notumor', 'glioma', 'meningioma', 'pituitary']
+class_mapping = {i: category for i, category in enumerate(categories)}
+
+st.write("""
+# Brain Tumor Classification
+""")
+file = st.file_uploader("Upload an MRI image", type=["jpg", "png"])
+
+def preprocess_image(image):
+    size = (128, 128)
+    image = ImageOps.fit(image, size, Image.ANTIALIAS)
     image = np.asarray(image)
-    image = image / 255.0
-    img_reshape = np.reshape(image, (1, 256, 256, 3))
-    prediction = model.predict(img_reshape)
-    return prediction
+    image = image / 255.0  # Normalize the image
+    image = np.expand_dims(image, axis=0)  # Add batch dimension
+    return image
 
-def main():
-    st.title("Brain Tumor Classification")
-    file = st.file_uploader("Choose a brain MRI image", type=["jpg", "jpeg", "png"])
-
-    if file is None:
-        st.text("Please upload an image file.")
-    else:
+if file is None:
+    st.text("Please upload an image file")
+else:
+    try:
         image = Image.open(file)
-        st.image(image, caption='Uploaded MRI Image.', use_column_width=True)
-        model = load_model()
-        if st.button("Classify"):
-            prediction = import_and_predict(image, model)
-            categories = ['notumor', 'glioma', 'meningioma', 'pituitary']
-            class_index = np.argmax(prediction)
-            class_name = categories[class_index]
-            st.success("Predicted Class: {}".format(class_name))
+        st.image(image, use_column_width=True)
+        preprocessed_image = preprocess_image(image)
+        prediction = model.predict(preprocessed_image)[0]
+        predicted_class = np.argmax(prediction)
+        predicted_category = class_mapping[predicted_class]
+        confidence = prediction[predicted_class] * 100
 
-if __name__ == '__main__':
-    main()
+        st.write(f"Predicted Category: {predicted_category}")
+        st.write(f"Confidence: {confidence:.2f}%")
+    except Exception as e:
+        st.text("An error occurred while processing the image.")
+        st.text(str(e))
