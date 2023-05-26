@@ -2,12 +2,12 @@ import streamlit as st
 import tensorflow as tf
 import numpy as np
 from PIL import Image
-import io
 
 model = tf.keras.models.load_model('brainMRI.h5')
 
 def preprocess_image(image):
-    image = cv2.resize(image, (128, 128))
+    image = image.resize((128, 128))
+    image = np.array(image)
     image = image.astype('float32') / 255.0
     return image
 
@@ -19,7 +19,7 @@ def main():
     uploaded_file = st.file_uploader("Choose an MRI image", type=['jpg', 'jpeg', 'png'])
 
     if uploaded_file is not None:
-        image = cv2.imdecode(np.fromstring(uploaded_file.read(), np.uint8), 1)
+        image = Image.open(uploaded_file)
         image = preprocess_image(image)
 
         # Make prediction
