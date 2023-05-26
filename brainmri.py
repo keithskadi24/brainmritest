@@ -14,6 +14,10 @@ st.title("Brain Tumor Classifier")
 file = st.file_uploader("Choose a brain MRI image", type=["jpg", "jpeg", "png"])
 
 def preprocess_image(image):
+    # Convert image to RGB if it's not already
+    if image.mode != "RGB":
+        image = image.convert("RGB")
+    
     # Resize and normalize the image
     image = image.resize((128, 128))
     image = np.array(image) / 255.0
