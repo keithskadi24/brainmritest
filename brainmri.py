@@ -5,35 +5,34 @@ import numpy as np
 
 @st.cache(allow_output_mutation=True)
 def load_model():
-    model = tf.keras.models.load_model('brainMRI.h5')
+    model = tf.keras.models.load_model('models/final_model.h5')
     return model
 
-model = load_model()
-categories = ['notumor', 'glioma', 'meningioma', 'pituitary']
+def import_and_predict(image_data, model):
+    size = (128, 128)
+    image = ImageOps.fit(image_data, size, Image.LANCZOS)
+    image = np.asarray(image)
+    image = image / 255.0
+    img_reshape = np.reshape(image, (1, 128, 128, 3))
+    prediction = model.predict(img_reshape)
+    return prediction
 
-st.title("Brain Tumor MRI Classification")
-file = st.file_uploader("Choose a brain MRI image", type=["jpg", "png"])
+def main():
+    st.title("Brain Tumor Classification")
+    file = st.file_uploader("Choose a brain MRI image", type=["jpg", "jpeg", "png"])
 
-def preprocess_image(image):
-    resized_image = image.resize((128, 128))
-    normalized_image = np.array(resized_image) / 255.0
-    reshaped_image = np.reshape(normalized_image, (1, 128, 128, 3))
-    return reshaped_image
+    if file is None:
+        st.text("Please upload an image file.")
+    else:
+        image = Image.open(file)
+        st.image(image, caption='Uploaded MRI Image.', use_column_width=True)
+        model = load_model()
+        if st.button("Classify"):
+            prediction = import_and_predict(image, model)
+            categories = ['notumor', 'glioma', 'meningioma', 'pituitary']
+            class_index = np.argmax(prediction)
+            class_name = categories[class_index]
+            st.success("Predicted Class: {}".format(class_name))
 
-def classify_image(image, model):
-    preprocessed_image = preprocess_image(image)
-    prediction = model.predict(preprocessed_image)
-    class_index = np.argmax(prediction)
-    class_name = categories[class_index]
-    confidence = prediction[0][class_index]
-    return class_name, confidence
-
-if file is None:
-    st.text("Please upload an image file")
-else:
-    image = Image.open(file)
-    st.image(image, use_column_width=True)
-    class_name, confidence = classify_image(image, model)
-    st.subheader("Prediction:")
-    st.write(f"Class: {class_name}")
-    st.write(f"Confidence: {confidence:.2f}")
+if __name__ == '__main__':
+    main()
