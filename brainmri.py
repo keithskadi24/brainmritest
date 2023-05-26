@@ -20,7 +20,7 @@ st.write("""
 file = st.file_uploader("Upload an MRI image", type=["jpg", "png"])
 
 def preprocess_image(image):
-    size = (128, 128)
+    size = (256, 256)
     image = ImageOps.fit(image, size, Image.ANTIALIAS)
     image = np.asarray(image)
     image = image / 255.0  # Normalize the image
@@ -32,6 +32,7 @@ if file is None:
 else:
     try:
         image = Image.open(file)
+        image = image.resize((256, 256))  # Resize the image
         st.image(image, use_column_width=True)
         preprocessed_image = preprocess_image(image)
         prediction = model.predict(preprocessed_image)[0]
