@@ -7,6 +7,7 @@ from PIL import Image
 
 model = tf.keras.models.load_model('brainMRI.h5')
 
+@tf.function
 def preprocess_image(image_file):
     img = np.array(Image.open(image_file))
     img = cv2.resize(img, (128, 128))
