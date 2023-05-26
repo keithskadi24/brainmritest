@@ -2,10 +2,11 @@ import streamlit as st
 import tensorflow as tf
 from PIL import Image, ImageOps
 import numpy as np
+from tensorflow import keras
 
 @st.cache(allow_output_mutation=True)
 def load_model():
-    model = tf.keras.models.load_model('brainMRI.h5')
+    model = keras.models.load_model('brainMRI.h5')
     return model
 
 def import_and_predict(image_data, model):
