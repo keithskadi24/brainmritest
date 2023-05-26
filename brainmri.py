@@ -1,41 +1,36 @@
 import streamlit as st
-import cv2
 import tensorflow as tf
-from tensorflow.keras.preprocessing import image
-import numpy as np
 from PIL import Image
-import io
+import numpy as np
 
-model = tf.keras.models.load_model('brainMRI.h5')
+@st.cache(allow_output_mutation=True)
+def load_model():
+    model = tf.keras.models.load_model('brainMRI.h5')
+    return model
 
-def preprocess_image(image_file):
-    img = Image.open(image_file)
-    img = img.resize((128, 128))
-    img = np.array(img)
-    img = img / 255.0
-    img = np.expand_dims(img, axis=0)
-    return img
+model = load_model()
 
-def main():
-    st.title("Brain Tumor Classification")
-    st.write("Upload an MRI image for tumor classification.")
+st.title("Brain Tumor Classifier")
+file = st.file_uploader("Choose a brain MRI image", type=["jpg", "jpeg", "png"])
 
-    # Upload image file
-    uploaded_file = st.file_uploader("Choose an MRI image", type=["jpg", "jpeg", "png"])
+def preprocess_image(image):
+    # Resize and normalize the image
+    image = image.resize((128, 128))
+    image = np.array(image) / 255.0
+    image = np.expand_dims(image, axis=0)
+    return image
 
-    if uploaded_file is not None:
-        # Preprocess the image
-        img = preprocess_image(uploaded_file)
+def predict(image, model):
+    preprocessed_image = preprocess_image(image)
+    prediction = model.predict(preprocessed_image)
+    return prediction
 
-        # Make predictions
-        predictions = model.predict(img)
-        class_names = ['notumor', 'glioma', 'meningioma', 'pituitary']
-        predicted_class = class_names[np.argmax(predictions)]
-
-        # Display the result
-        st.image(uploaded_file, caption='Uploaded MRI', use_column_width=True)
-        st.success(f"Predicted Class: {predicted_class}")
-
-if __name__ == '__main__':
-    main()
-
+if file is None:
+    st.text("Please upload an image file")
+else:
+    image = Image.open(file)
+    st.image(image, caption="Uploaded Image", use_column_width=True)
+    prediction = predict(image, model)
+    class_names = ['notumor', 'glioma', 'meningioma', 'pituitary']
+    predicted_class = class_names[np.argmax(prediction)]
+    st.success(f"Predicted Class: {predicted_class} (Confidence: {prediction[0][np.argmax(prediction)]:.4f})")
